@@ -2,6 +2,7 @@ use std::error::Error;
 use std::{fs, path};
 
 use clap::Parser;
+use regex::Regex;
 
 #[derive(Debug, Parser)]
 #[command(about = "Search for patterns in a file", long_about = None)]
@@ -11,6 +12,9 @@ pub struct Config {
 
     #[arg(short, long, action, help = "ignore case distinctions")]
     pub ignore_case: bool,
+
+    #[arg(short, long, action, help = "pattern is a regular expression")]
+    pub regex: bool,
 }
 
 // Box<dyn Error> returns a type that implements the Error
@@ -18,10 +22,13 @@ pub struct Config {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.file_path)?;
 
-    let results = if config.ignore_case {
-        search_case_insensitive(&config.pattern, &contents)
-    } else {
-        search(&config.pattern, &contents)
+    let results = match config {
+        Config { ignore_case: true, .. } => search_case_insensitive(&config.pattern, &contents),
+        Config { regex: true, .. } => {
+            let regex = Regex::new(&config.pattern)?;
+            search_regex(&regex, &contents)
+        },
+        _ => search(&config.pattern, &contents),
     };
 
     for line in results {
@@ -38,6 +45,18 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
 
     for line in contents.lines() {
         if line.contains(query) {
+            results.push(line);
+        }
+    }
+
+    results
+}
+
+pub fn search_regex<'a>(pattern: &Regex, contents: &'a str) -> Vec<&'a str> {
+    let mut results = Vec::new();
+
+    for line in contents.lines() {
+        if pattern.is_match(line) {
             results.push(line);
         }
     }
