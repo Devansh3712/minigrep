@@ -1,26 +1,16 @@
 use std::error::Error;
-use std::{env, fs};
+use std::{fs, path};
 
+use clap::Parser;
+
+#[derive(Debug, Parser)]
+#[command(about = "Search for patterns in a file", long_about = None)]
 pub struct Config {
-    pub query: String,
-    pub file_path: String,
+    pub pattern: String,
+    pub file_path: path::PathBuf,
+
+    #[arg(short, long, action, help = "ignore case distinctions")]
     pub ignore_case: bool,
-}
-
-impl Config {
-    // Error values have a 'static lifetime, lasts till the
-    // program terminates.
-    pub fn new(args: &[String]) -> Result<Self, &'static str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
-
-        let query = args[1].clone();
-        let file_path = args[2].clone();
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
-
-        Ok(Self { query, file_path, ignore_case })
-    }
 }
 
 // Box<dyn Error> returns a type that implements the Error
@@ -29,9 +19,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.file_path)?;
 
     let results = if config.ignore_case {
-        search_case_insensitive(&config.query, &contents)
+        search_case_insensitive(&config.pattern, &contents)
     } else {
-        search(&config.query, &contents)
+        search(&config.pattern, &contents)
     };
 
     for line in results {
