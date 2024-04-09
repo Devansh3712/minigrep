@@ -7,8 +7,11 @@ use minigrep::{run, Config};
 fn main() {
     let config = Config::parse();    
 
-    if let Err(e) = run(config) {
-        eprintln!("Application error: {e}");
+    if let Err(e) = run(&config) {
+        match &config {
+            Config { no_messages: true, .. } => (),
+            _ => eprintln!("Application error: {e}"),
+        }
         process::exit(1);
     }
 }

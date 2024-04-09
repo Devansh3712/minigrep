@@ -10,17 +10,20 @@ pub struct Config {
     pub pattern: String,
     pub file_path: path::PathBuf,
 
-    #[arg(short, long, action, help = "ignore case distinctions")]
+    #[arg(short, long = "ignore-case", action, help = "ignore case distinctions")]
     pub ignore_case: bool,
 
-    #[arg(short, long, action, help = "pattern is a regular expression")]
+    #[arg(short, long = "regexp", action, help = "pattern is a regular expression")]
     pub regex: bool,
+
+    #[arg(short, long = "no-messages", action, help = "supress error message")]
+    pub no_messages: bool,
 }
 
 // Box<dyn Error> returns a type that implements the Error
 // trait. dyn keyword is short for Dynamic.
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.file_path)?;
+pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(&config.file_path)?;
 
     let results = match config {
         Config { ignore_case: true, .. } => search_case_insensitive(&config.pattern, &contents),
