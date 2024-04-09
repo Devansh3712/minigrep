@@ -102,4 +102,12 @@ mod tests {
             search_case_insensitive(query, contents),
         );
     }
+
+    #[test]
+    fn regex() {
+        let query = Regex::new("tan$").unwrap();
+        let contents = "hello secctan";
+
+        assert_eq!(vec!["hello secctan"], search_regex(&query, contents));
+    }
 }
