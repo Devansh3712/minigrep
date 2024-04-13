@@ -16,8 +16,11 @@ pub struct Config {
     #[arg(short, long = "regexp", action, help = "pattern is a regular expression")]
     pub regex: bool,
 
-    #[arg(short, long = "no-messages", action, help = "supress error message")]
+    #[arg(short = 's', long = "no-messages", action, help = "supress error message")]
     pub no_messages: bool,
+
+    #[arg(short = 'v', long = "invert-match", action, help = "select non-matching lines")]
+    pub invert_match: bool,
 }
 
 // Box<dyn Error> returns a type that implements the Error
@@ -31,6 +34,7 @@ pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
             let regex = Regex::new(&config.pattern)?;
             search_regex(&regex, &contents)
         },
+        Config { invert_match: true, .. } => search_invert(&config.pattern, &contents),
         _ => search(&config.pattern, &contents),
     };
 
@@ -60,6 +64,18 @@ pub fn search_regex<'a>(pattern: &Regex, contents: &'a str) -> Vec<&'a str> {
 
     for line in contents.lines() {
         if pattern.is_match(line) {
+            results.push(line);
+        }
+    }
+
+    results
+}
+
+pub fn search_invert<'a>(pattern: &str, contents: &'a str) -> Vec<&'a str> {
+    let mut results = Vec::new();
+
+    for line in contents.lines() {
+        if line.contains(&pattern) == false {
             results.push(line);
         }
     }
@@ -112,5 +128,14 @@ mod tests {
         let contents = "hello secctan";
 
         assert_eq!(vec!["hello secctan"], search_regex(&query, contents));
+    }
+
+    #[test]
+    fn invert() {
+        let query = "tan";
+        let contents = "hello secctan";
+        let result: Vec<&str> = vec![];
+
+        assert_eq!(result, search_invert(&query, contents));
     }
 }
